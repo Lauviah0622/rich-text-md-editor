@@ -1,0 +1,46 @@
+.link {
+  position: relative;
+  display: inline-block;
+}
+
+.popup {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  border: solid 1px black;
+}
+
+.fakeSelection {
+  position: fixed;
+  z-index: -100;
+  top: 0;
+  left: 0;
+
+  & > .rect {
+    position: absolute;
+    background-color: Highlight;
+    /* opacity: 0.5; */
+    user-select: none;
+    pointer-events: none;
+  }
+}
+
+.editable {
+  border: 1px solid white;
+  border-radius: 10px;
+  flex-grow: 1;
+}
+
+.editable blockquote {
+  /* border-left:  */
+  border-left: 1px solid grey;
+  padding-left: 2em;
+  margin-left: 1em;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+  width: 60vw;
+}
