@@ -1,4 +1,3 @@
-import './App.css';
 import 'material-icons/iconfont/material-icons.css';
 
 import Editor from './editor';

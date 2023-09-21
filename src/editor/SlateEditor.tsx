@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-// import styled from '@emotion/styled';
-import type {
-  BaseEditor,
-  Descendant,
-  Path,
-  Element as SlateElement,
-} from 'slate';
-import { Node, Transforms } from 'slate';
+import type { BaseEditor, Element as SlateElement } from 'slate';
 import * as Slate from 'slate';
 import type { HistoryEditor } from 'slate-history';
 import { withHistory } from 'slate-history';
@@ -21,12 +14,13 @@ import { Element, Leaf } from './render/render';
 import { TEST_UNWRAP_TO_TEXT } from './fixture';
 import type { MarkdownParseContext } from './markdown/markdownAstToSlate/markdownAstToSlate';
 import { emptyContext } from './markdown/markdownAstToSlate/markdownAstToSlate';
-import { Icon, LinkButton, ListButton, MarkButton, Styles } from './components';
-import classnames from './SlateEditor.module.css';
+import { Icon, LinkButton, MarkButton, Styles } from './components';
 import { BlockquoteButton } from './components/BlockQuoteButton';
 import { CodeBlockButton } from './components/CodeBlockButton';
-import { JsxBlockButton } from './components/JsxBlockButton';
-import { isSlateParagraph } from './types/slate';
+import { Toolbar } from './components/Toolbar';
+import { slateToMarkdown } from './markdown';
+
+import classes from './SlateEditor.module.css';
 
 const isInlinePlugin = (element: SlateElement) => {
   return ['mdxJsxTextElement', 'link', 'image'].includes(element.type);
@@ -40,7 +34,7 @@ const isVoidPlugin = (element: SlateElement) => {
 
 const FakeSelection = ({ show }: { show: boolean }) => {
   const editor = useSlate();
-  const { selection } = editor;
+  const { selection, children } = editor;
   const [rectList, setRectList] = useState<DOMRect[]>([]);
 
   useEffect(() => {
@@ -71,16 +65,16 @@ const FakeSelection = ({ show }: { show: boolean }) => {
 
       setRectList(rectsArray);
     }
-  }, [selection]);
+  }, [selection, children]);
 
   return (
-    <div className={classnames.fakeSelection}>
+    <div className={classes.fakeSelection}>
       {show &&
         Array.from(rectList).map((rect, i) => {
           return (
             <span
               key={i}
-              className={classnames.rect}
+              className={classes.rect}
               style={{
                 height: rect.height,
                 width: rect.width,
@@ -104,10 +98,13 @@ const initEditor = () => {
   return editor;
 };
 
-const SlateEditor = ({ init }: { init: Descendant[] }) => {
+const SlateEditor = () => {
   const [editor] = useState(initEditor);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isEditorStillFocus, setIsEditorStillFocus] = useState(false);
+  const [markdown, setMarkdown] = useState(() =>
+    slateToMarkdown(editor.children)
+  );
 
   const renderElement = useCallback(Element, []);
 
@@ -124,6 +121,8 @@ const SlateEditor = ({ init }: { init: Descendant[] }) => {
   };
 
   const onChange = () => {
+    setMarkdown(slateToMarkdown(editor.children));
+
     const isAstChange = editor.operations.some(
       (op) => op.type !== 'set_selection'
     );
@@ -133,12 +132,10 @@ const SlateEditor = ({ init }: { init: Descendant[] }) => {
     }
   };
 
-  console.log('editor', editor.children);
-
   return (
     <div
       ref={containerRef}
-      className={classnames.editor}
+      className={classes.editor}
       onFocus={(e) => {
         if (!containerRef.current) return;
 
@@ -155,46 +152,50 @@ const SlateEditor = ({ init }: { init: Descendant[] }) => {
          */
       }}
     >
-      <ReactSlate
-        editor={editor}
-        initialValue={TEST_UNWRAP_TO_TEXT}
-        onChange={onChange}
-      >
-        <div>
-          <MarkButton mark="bold">
-            <Icon>format_bold</Icon>
-          </MarkButton>
-          <MarkButton mark="emphasis">
-            <Icon>format_italic</Icon>
-          </MarkButton>
-          <MarkButton mark="code">
-            <Icon>code</Icon>
-          </MarkButton>
-          <Styles />
-          <BlockquoteButton />
-          <CodeBlockButton />
-          <ListButton />
-          <JsxBlockButton />
-          <LinkButton />
-        </div>
+      <div className={classes.left}>
+        <ReactSlate
+          editor={editor}
+          initialValue={TEST_UNWRAP_TO_TEXT}
+          onChange={onChange}
+        >
+          <Toolbar>
+            <MarkButton mark="bold">
+              <Icon>format_bold</Icon>
+            </MarkButton>
+            <MarkButton mark="emphasis">
+              <Icon>format_italic</Icon>
+            </MarkButton>
+            <MarkButton mark="code">
+              <Icon>code</Icon>
+            </MarkButton>
+            <Styles />
+            <BlockquoteButton />
+            <CodeBlockButton />
+            <LinkButton />
+          </Toolbar>
 
-        <Editable
-          renderElement={renderElement}
-          renderLeaf={renderLeaf}
-          className={classnames.editable}
-        />
-        <FakeSelection show={isEditorStillFocus} />
-      </ReactSlate>
+          <Editable
+            renderElement={renderElement}
+            renderLeaf={renderLeaf}
+            className={classes.editable}
+          />
+          <FakeSelection show={isEditorStillFocus} />
+        </ReactSlate>
+      </div>
+      <div className={classes.right}>
+        <textarea
+          value={markdown}
+          ref={() => {
+            if (!markdown) {
+              setMarkdown(slateToMarkdown(editor.children));
+            }
+          }}
+        ></textarea>
+      </div>
     </div>
   );
 };
 
 export default function EditorWrapper() {
-  const [init] = useState([]);
-
-  return (
-    <>
-      <SlateEditor init={init} />
-    </>
-  );
+  return <SlateEditor />;
 }

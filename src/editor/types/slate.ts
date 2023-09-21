@@ -83,7 +83,7 @@ export const isSlateParagraph = (e: any): e is Paragraph => {
 
 export interface Code extends Parent {
   type: 'code'
-  children: Paragraph[]
+  children: [Paragraph]
   lang?: string
   meta?: string
 }

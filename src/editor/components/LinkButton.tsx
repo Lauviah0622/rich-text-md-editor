@@ -1,48 +1,44 @@
-import { useEffect, useState } from 'react'
-import { Editor, Element, Node, Range, Transforms } from 'slate'
-import { useSlate } from 'slate-react'
-import cx from 'classnames'
-import { isSlateLink } from '../types/slate'
-import type { Link, WithoutChildren } from '../types/slate'
-import style from './LinkButton.module.css'
-import { Button, Icon } from './components'
+import { useEffect, useState } from 'react';
+import { Editor, Element, Node, Range, Transforms } from 'slate';
+import { useSlate } from 'slate-react';
+import cx from 'classnames';
+import { isSlateLink } from '../types/slate';
+import type { Link, WithoutChildren } from '../types/slate';
+import classes from './style.module.css';
+import { Button, Icon } from './components';
 
 export const LinkButton = () => {
-  const editor = useSlate()
-  const { selection } = editor
+  const editor = useSlate();
+  const { selection } = editor;
 
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState('');
 
   const availableNodes = (() => {
-    if (!selection)
-      return []
+    if (!selection) return [];
 
-    const unhangeRange = Editor.unhangRange(editor, selection)
+    const unhangeRange = Editor.unhangRange(editor, selection);
 
-    const isExpanded = Range.isExpanded(unhangeRange)
-    if (!isExpanded)
-      return []
+    const isExpanded = Range.isExpanded(unhangeRange);
+    if (!isExpanded) return [];
 
     const nodes = Array.from(
       Editor.nodes(editor, {
         at: unhangeRange,
         match: (n, p) => {
-          if (Editor.isEditor(n) || Element.isElement(n))
-            return false
+          if (Editor.isEditor(n) || Element.isElement(n)) return false;
 
-          const ancestors = Node.ancestors(editor, p, { reverse: true })
+          const ancestors = Node.ancestors(editor, p, { reverse: true });
           for (const [node] of ancestors) {
-            if (isSlateLink(node))
-              return false
+            if (isSlateLink(node)) return false;
           }
 
-          return true
+          return true;
         },
-      }),
-    )
+      })
+    );
 
-    return nodes
-  })()
+    return nodes;
+  })();
 
   /**
    * Test case:
@@ -66,92 +62,84 @@ export const LinkButton = () => {
    */
 
   const linkInSelection = (() => {
-    if (!selection)
-      return null
+    if (!selection) return null;
 
-    const unhangeRange = Editor.unhangRange(editor, selection)
+    const unhangeRange = Editor.unhangRange(editor, selection);
     const nodes = Array.from(
       Editor.nodes<Link>(editor, {
         match: (n: Node) =>
-          !Editor.isEditor(n)
-          && Element.isElement(n)
-          && isSlateLink(n),
+          !Editor.isEditor(n) && Element.isElement(n) && isSlateLink(n),
         at: unhangeRange,
         mode: 'lowest',
-      }),
-    )
-    return nodes.length === 1 ? nodes[0] : null
-  })()
+      })
+    );
+    return nodes.length === 1 ? nodes[0] : null;
+  })();
 
   useEffect(() => {
-    if (availableNodes.length > 0)
-      setUrl('')
-  }, [availableNodes.length])
+    if (availableNodes.length > 0) setUrl('');
+  }, [availableNodes.length]);
 
   useEffect(() => {
-    if (!linkInSelection)
-      return
-    const [node] = linkInSelection
-    if (url !== node.url)
-      setUrl(node.url)
-  }, [selection, editor])
+    if (!linkInSelection) return;
+    const [node] = linkInSelection;
+    if (url !== node.url) setUrl(node.url);
+  }, [selection, editor]);
   const apply = () => {
     const link: Link = {
       type: 'link',
       url,
-      children: []
-    }
-    Transforms.wrapNodes(editor, link, { split: true })
-  }
+      children: [],
+    };
+    Transforms.wrapNodes(editor, link, { split: true });
+  };
 
   const update = () => {
-    if (!linkInSelection)
-      return
-    const [_node, at] = linkInSelection
+    if (!linkInSelection) return;
+    const [_node, at] = linkInSelection;
     const link: WithoutChildren<Link> = {
       type: 'link',
       url,
-    }
-    Transforms.setNodes(editor, link, { at })
-  }
+    };
+    Transforms.setNodes(editor, link, { at });
+  };
 
   const remove = () => {
-    if (!linkInSelection)
-      return
-    const [_node, at] = linkInSelection
-    Transforms.unwrapNodes(editor, { at })
-  }
+    if (!linkInSelection) return;
+    const [_node, at] = linkInSelection;
+    Transforms.unwrapNodes(editor, { at });
+  };
+
+  const isInputDisabled = availableNodes.length < 1 && !linkInSelection;
 
   return (
-    <span className={cx(style.link)}>
-      <Button active={!!linkInSelection}>
-        <Icon>link</Icon>
-      </Button>
-      {availableNodes.length > 0 && (
-        <div className={style.popup}>
-          url:{' '}
-          <input
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value)
-            }}
-          />
-          <button onClick={apply}>apply</button>
-        </div>
+    <span className={cx(classes.link)}>
+      <Icon>link</Icon>
+      <input
+        disabled={isInputDisabled}
+        value={isInputDisabled ? '' : url}
+        onChange={(e) => {
+          setUrl(e.target.value);
+        }}
+      />
+      {!linkInSelection && (
+        <button
+          onClick={apply}
+          disabled={
+            (availableNodes.length < 1 && !linkInSelection) || url.length < 1
+          }
+        >
+          apply
+        </button>
       )}
       {!!linkInSelection && (
-        <div className={style.popup}>
-          url:{' '}
-          <input
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value)
-            }}
-          />
+        <>
           <button onClick={update}>update</button>
-          <button onClick={remove}>remove</button>
-        </div>
+        </>
       )}
+      <button onClick={remove} disabled={!linkInSelection}>
+        remove
+      </button>
     </span>
-  )
-}
+  );
+};

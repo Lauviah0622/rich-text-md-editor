@@ -18,9 +18,9 @@ export const Button = ({
     active?: boolean;
   } & BaseProps
 >) => (
-  <span
+  <button
     {...props}
-    className={css(className, classes.button, active && 'active')}
+    className={css(className, classes.button, active && classes.active)}
   />
 );
 

@@ -11,10 +11,7 @@ export const MarkButton = ({
   mark: keyof Omit<Text, 'text'>;
 }>) => {
   const editor = useSlate();
-
   const marks = Editor.marks(editor) ?? {};
-
-  console.log('isMarkActive', mark, marks);
   const isMarkActive = !!marks?.[mark];
 
   const onClick = () => {
